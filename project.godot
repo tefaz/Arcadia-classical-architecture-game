@@ -1,0 +1,34 @@
+; Arcadia: a modular classical architecture sandbox.
+config_version=5
+
+[application]
+config/name="Arcadia — Classical Builder"
+run/main_scene="res://src/main.tscn"
+config/features=PackedStringArray("4.5", "GL Compatibility")
+config/icon="res://assets/icon.svg"
+config/description="A first-person sanctuary for building classical architecture."
+
+[display]
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/window_width_override=1600
+window/size/window_height_override=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+anti_aliasing/quality/msaa_3d=2
+lights_and_shadows/directional_shadow/size=2048
+environment/defaults/default_clear_color=Color(0.61, 0.71, 0.76, 1)
+
+[physics]
+common/physics_ticks_per_second=60
+
+[audio]
+driver/enable_input=false
+
+[debug]
+gdscript/warnings/untyped_declaration=0

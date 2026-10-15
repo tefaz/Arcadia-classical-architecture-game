@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Arcadia — Classical Builder
+Comment=Build classical architecture in a first-person creative sanctuary
+Exec=/home/mads/Projects/classical-architecture-modular-game/launch.sh
+Icon=/home/mads/Projects/classical-architecture-modular-game/assets/icon.svg
+Terminal=false
+Categories=Game;Simulation;

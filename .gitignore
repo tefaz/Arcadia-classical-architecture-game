@@ -1,0 +1,18 @@
+.godot/
+tools/Godot*
+tools/*.zip
+tools/*.tpz
+tools/*.slice
+tools/*.bin
+tools/template-range.json
+tools/linux_release.*
+builds/*
+!builds/.gitkeep
+*.log
+
+# Local agent/account state and personal game data.
+/.agents/
+/.codex/
+/.aws/
+/sanctuary.json*
+/settings.cfg
