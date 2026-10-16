@@ -36,6 +36,8 @@ static func create(id: String, stone: int = 0, preview: bool = false, length: fl
 	root.stone = stone
 	root.span_length = length
 	root.stair_rise = stair_rise
+	var size := BuildCatalogue.piece_size(id,length,stair_rise)
+	root.cover_rect = Rect2(Vector2(-size.x/2,-size.z/2),Vector2(size.x,size.z))
 	root.collision_layer = 0 if preview else 2
 	root.collision_mask = 0
 	configure(root,0,0,preview)
@@ -49,6 +51,8 @@ static func configure(root: BuildPiece, left: int, right: int, preview: bool = f
 		child.queue_free()
 	var bounds_set := false
 	var parts := preload("res://src/building/ceiling_fit.gd").recipe(root.ceiling_rects,root.ceiling_regions) if root.kind == "flat_roof" else get_recipe(root.kind,left,right,root.span_length,root.stair_rise)
+	if root.kind in BuildCatalogue.FOUNDATION_KINDS:
+		parts = preload("res://src/building/wall_cover.gd").foundation_recipe(root.kind,root.cover_rect)
 	parts = preload("res://src/building/pediment_fit.gd").apply(parts,root.pediment_fit)
 	for part in parts:
 		if part.has("mesh"):
@@ -380,6 +384,8 @@ static func recipe(id: String, length: float = BuildCatalogue.BAY, stair_rise: f
 	var p: Array = []
 	if id in BuildCatalogue.WINDOW_KINDS:
 		return preload("res://src/building/window_geometry.gd").recipe(id,length)
+	if id in BuildCatalogue.DOOR_KINDS:
+		return preload("res://src/building/door_geometry.gd").recipe(length)
 	if id in BuildCatalogue.DOME_KINDS:
 		return preload("res://src/building/dome_geometry.gd").recipe(id)
 	if id in BuildCatalogue.ROOF_KINDS:

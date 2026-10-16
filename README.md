@@ -37,20 +37,34 @@ cd Arcadia-Linux
 
 The portable build includes the runtime; playing it does not require Godot, Python or an internet connection. Generated executables and archives are not stored in this source repository. See [Build a portable game](#build-a-portable-game) to create them.
 
-**Tested platform:** x86-64 Linux, with X11 or Wayland and an OpenGL 3.3 / OpenGL ES 3.0 capable graphics driver. The setup script also supports an ARM64 Linux engine, but ARM64 has not been tested here and the export preset targets x86-64. Settings include graphics quality, field of view, mouse sensitivity, sound and brightness in shade. Use the **Simple** graphics profile to disable shadows.
+**Tested platform:** x86-64 Linux, with X11 or Wayland. Cinematic lighting uses **Forward+** and a Vulkan-capable graphics driver. An **OpenGL 3.3 / OpenGL ES 3.0 Compatibility** profile remains available: run `./launch.sh --rendering-method gl_compatibility` (or `./play.sh --rendering-method gl_compatibility` in a portable build). The setup script also supports an ARM64 Linux engine, but ARM64 has not been tested here and the export preset targets x86-64. Settings include graphics quality, field of view, mouse sensitivity, sound and brightness in shade.
+
+The integrated cinematic lighting combines warmer sunlight, cooler shade, softer shadows and AgX tone mapping. Limestone has a warmer beige base so it remains distinct from white marble at noon. **Balanced** adds subtle contact shading, restrained HDR highlight glow and 2× antialiasing. **High** adds screen-space indirect light, finer shadows and 4× antialiasing. **Simple** disables shadows and screen-space effects. The Compatibility profile uses its own lighter rendering setup and warm stone palette. Lighting updates immediately as you build; no baking or external shaderpack is needed.
+
+![A limestone house with cinematic noon lighting and a pediment doorway](docs/screenshots/cinematic-lighting.png)
+
+The wooded map edges use branching **cypresses, olive trees and umbrella pines**, with textured bark, individual leaves and gentle foliage movement. Trees and scattered rocks sit beyond the construction area; complete canopies stay outside a **140 × 140 m** central clearing, leaving room around the ±60 m building boundary.
+
+![Detailed Mediterranean trees planted on the surrounding hills](docs/screenshots/perimeter-trees.png)
+
+The terrain has smoother hills, detailed soil and gravel, and patches of short grass moving in the breeze. Grass clears automatically beneath ground-level structures and returns when they are removed; undo/redo, copying and saved worlds keep it in sync. Elevated roofs leave the grass below intact. Graphics quality adjusts grass density and viewing distance.
+
+![Detailed ground and scattered grass around the pavilion](docs/screenshots/landscape-grass.png)
+
+Default walking speed is **10 m/s**, with **18 m/s** sprinting. Creative flight reaches **16 m/s**, or **28.8 m/s** when sprinting.
 
 ## What you can build
 
-The library contains **39 components**, with **warm limestone, white marble and golden sandstone** finishes. Terracotta roofs retain their tile colour.
+The library contains **40 components**, with **warm limestone, white marble and golden sandstone** finishes. Terracotta roofs retain their tile colour.
 
 | Category | Pieces and behaviour |
 | --- | --- |
 | Foundations | Repeatable masonry blocks, raised terraces, temple podiums, paving and stair supports. Stairs automatically fit the height and direction of a foundation landing. |
 | Columns | Complete Doric, Ionic and Corinthian columns, including their bases, fluted shafts and carved capitals. Placement guides help establish consistent four-metre bays. |
-| Walls and openings | Ashlar walls, open arches, and window walls with triangular, curved or elliptical decoration. Windows and doorways have real openings. |
+| Walls and openings | Ashlar walls, open arches, a rectangular doorway wall with a triangular pediment, and window walls with triangular, curved or elliptical decoration. Windows and doorways have real openings. |
 | Entablatures and trim | Beams, dentil cornices and balustrades with automatic right-angle mitres and fitted closing spans. Walls can sit flush with foundation edges. |
 | Pediments | Left/right slopes, crowns, backing and base cornices for large gables. Connected slopes form continuous diagonals and follow the outer entablature corners. |
-| Roofs and ceilings | Rotatable terracotta and stone slopes, smaller half slopes, flat ceilings and hollow domes. Ceilings fit between pediments and beneath sloped roofs, including offset tile grids. |
+| Roofs and ceilings | Rotatable terracotta and stone slopes, smaller half slopes, flat ceilings and hollow domes. Flat covers and foundation upper floors fit flush on rectangular wall rooms; ceilings also fit pediments and roof slopes. |
 | Sculpture and details | Draped and reclining figures, horse reliefs, a full lion statue, square and rectangular pedestals, urns and palmette finials. |
 
 Most structural bays are **4 m** wide. Doric and Ionic columns are **4.1 m** tall; Corinthian columns are **4.3 m**. Adjustable wall and beam spans range from **0.5 to 8 m**. Use the same column order along a run to keep the roof support plane level.
@@ -132,7 +146,7 @@ A **20-minute daylight cycle** moves from morning to sunset, then immediately re
 
 ## Development
 
-The project uses **Godot 4.7.2**, GDScript and the **GL Compatibility** renderer. Architecture, sculpture, scenery, material shaders, icons and short sound effects are generated by the source code. There are no external game-art packs or online gameplay services.
+The project uses **Godot 4.7.2**, GDScript and the **Forward+** renderer, with a tuned **GL Compatibility** fallback. Architecture, sculpture, scenery, material shaders, icons and short sound effects are generated by the source code. There are no external game-art packs or online gameplay services.
 
 ```bash
 # Download the engine, if needed.
@@ -145,7 +159,7 @@ bash tools/setup.sh
 bash tests/run.sh
 ```
 
-Tests use temporary data directories and do not load or overwrite your personal sanctuary. They exercise mesh closure and normals, collision, native input, placement and fitting, material selection, flight and sprinting, hotbar interaction, save/load, history, stacking and ceiling-preview performance. The current suite contains **3,191 checks**.
+Tests use temporary data directories and do not load or overwrite your personal sanctuary. They exercise mesh closure and normals, collision, native input, placement and fitting, material selection, flight and sprinting, hotbar interaction, save/load, history, stacking, lighting quality transitions, scenery clearance, doorways, flush wall covers and ceiling-preview performance. The current suite contains **3,555 checks** with the default renderer.
 
 | Path | Purpose |
 | --- | --- |
@@ -164,7 +178,7 @@ See [architecture notes](docs/architecture.md) for implementation details. To ma
   --capture /tmp/arcadia-lions.png --lions --lion-detail
 ```
 
-Capture mode does not load or save your personal world. Other example flags include `--roofs`, `--pediments`, `--enclosed-roof --interior` and `--corinthian --capital-detail`.
+Capture mode does not load or save your personal world. Other example flags include `--roofs`, `--pediments`, `--enclosed-roof --interior`, `--trees` and `--corinthian --capital-detail`. Add `--quality 0`, `--quality 1` or `--quality 2` to compare lighting profiles without changing saved settings, and `--day-progress 0.94` to check sunset.
 
 ### Build a portable game
 

@@ -15,7 +15,7 @@ static func run(tree: SceneTree, game: Node3D, check: Callable) -> void:
 	for kind in game.ui.card_buttons:
 		if game.ui.card_buttons[kind].visible: columns.append(kind)
 	check.call(columns == ["doric_column","ionic_column","corinthian_column"],"The Columns library offers only the three complete column styles")
-	check.call(BuildCatalogue.PIECES.size() == 39 and game.ui.card_buttons.size() == 39,"The library includes modular roofs, two domes, a rectangular pedestal and a lion statue")
+	check.call(BuildCatalogue.PIECES.size() == 40 and game.ui.card_buttons.size() == 40,"The library includes modular roofs, two domes, a lion statue and a pediment doorway wall")
 	for kind in BuildCatalogue.LEGACY_REPLACEMENTS:
 		check.call(not game.ui.card_buttons.has(kind) and not BuildCatalogue.get_piece(kind).is_empty(),kind+": absent from the library while old building records remain supported")
 	game.ui.filter_buttons.Foundations.pressed.emit()

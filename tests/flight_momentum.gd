@@ -22,7 +22,7 @@ static func run(tree: SceneTree, game: Node3D, check: Callable) -> void:
 	Input.action_press("forward")
 	await frames(tree,10)
 	var speed := player.velocity.length()
-	check.call(is_equal_approx(speed,8) and is_equal_approx(player.position.y,12),"Flight builds to its normal speed while staying level when looking down")
+	check.call(is_equal_approx(speed,16) and is_equal_approx(player.position.y,12),"Flight builds to its normal speed while staying level when looking down")
 	Input.action_release("forward")
 	var released_at := player.position
 	player.rotation.y = PI/2
@@ -31,7 +31,7 @@ static func run(tree: SceneTree, game: Node3D, check: Callable) -> void:
 	check.call(is_equal_approx(player.position.x,released_at.x),"Turning the view while coasting preserves the original direction")
 	await frames(tree,18)
 	var drift := player.position.distance_to(released_at)
-	check.call(player.velocity.is_zero_approx() and drift > 0.2 and drift < 1,"Flight comes fully to rest after a short coast of less than a metre")
+	check.call(player.velocity.is_zero_approx() and drift > 0.2 and drift < 2,"Flight comes fully to rest after a short coast of less than two metres")
 	var stopped_at := player.position
 	await frames(tree,8)
 	check.call(player.position.is_equal_approx(stopped_at),"Released flight settles completely without lingering drift")
@@ -53,13 +53,13 @@ static func run(tree: SceneTree, game: Node3D, check: Callable) -> void:
 		await frames(tree,2)
 		check.call((player.position.y-released_at.y)*(1 if action == "jump" else -1) > 0 and absf(player.velocity.y) > 0,"Vertical flight coasts briefly after releasing "+action)
 		await frames(tree,18)
-		check.call(player.velocity.is_zero_approx() and absf(player.position.y-released_at.y) < 1,"Vertical flight brakes to a complete stop")
+		check.call(player.velocity.is_zero_approx() and absf(player.position.y-released_at.y) < 2,"Vertical flight brakes to a complete stop")
 	reset(player)
 	Input.action_press("forward")
 	Input.action_press("right")
 	Input.action_press("jump")
 	await frames(tree,15)
-	check.call(is_equal_approx(player.velocity.length(),8),"Diagonal flight retains the normal total speed limit")
+	check.call(is_equal_approx(player.velocity.length(),16),"Diagonal flight retains the normal total speed limit")
 	Input.action_release("forward")
 	Input.action_release("right")
 	Input.action_release("jump")
@@ -107,6 +107,6 @@ static func run(tree: SceneTree, game: Node3D, check: Callable) -> void:
 		distances.append(player.position.distance_to(released_at))
 		check.call(player.velocity.is_zero_approx(),"Flight comes to rest at %d physics ticks per second" % rate)
 	Engine.physics_ticks_per_second = original_rate
-	check.call(distances.max()-distances.min() < 0.16,"Coasting distance stays consistent across 30, 60 and 120 physics ticks")
+	check.call(distances.max()-distances.min() < 0.32,"Coasting distance stays consistent across 30, 60 and 120 physics ticks")
 	player.set_flying(false)
 	game.ui.show_menu()

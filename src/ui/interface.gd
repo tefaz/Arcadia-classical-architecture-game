@@ -310,6 +310,7 @@ func _make_catalogue() -> void:
 	env.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.environment.ambient_light_color = Color("d0dbe1")
 	env.environment.ambient_light_energy = 0.45
+	SanctuaryWorld.Lighting.setup_preview(env.environment,light,fill)
 	preview_viewport.add_child(env)
 	detail_text = _label("",14,false,Color("b8c5b9"))
 	detail_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -431,8 +432,12 @@ func _make_settings() -> void:
 	column.add_child(shade)
 	var quality := OptionButton.new()
 	quality.add_item("Simple · shadows off")
-	quality.add_item("Balanced · shadows + 2× antialiasing")
-	quality.add_item("High · sharper shadows + 4× antialiasing")
+	if SanctuaryWorld.Lighting.is_forward_plus():
+		quality.add_item("Balanced · soft shadows + contact shading")
+		quality.add_item("High · finer shadows + indirect light")
+	else:
+		quality.add_item("Balanced · shadows + 2× antialiasing")
+		quality.add_item("High · sharper shadows + 4× antialiasing")
 	quality.select(int(get_meta("quality",1)))
 	quality.item_selected.connect(func(index): setting_changed.emit("quality",index))
 	column.add_child(quality)

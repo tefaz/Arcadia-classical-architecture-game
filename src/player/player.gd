@@ -5,8 +5,8 @@ signal flight_changed(enabled: bool)
 
 const DOUBLE_TAP_WINDOW_MSEC := 300
 const SPRINT_MULTIPLIER := 1.8
-const FLIGHT_ACCELERATION := 80.0
-const FLIGHT_BRAKING := 40.0 # At full speed, coast for 0.2 s and less than a metre.
+const FLIGHT_ACCELERATION := 160.0
+const FLIGHT_BRAKING := 80.0 # At normal flight speed, coast for about 0.2 s.
 
 var game_mode := GameModeState.new()
 var camera: Camera3D
@@ -21,7 +21,7 @@ var active := false:
 				velocity = Vector3.ZERO
 var flying := false
 var sensitivity := 0.0022
-var walk_speed := 5.0
+var walk_speed := 10.0
 var gravity := 22.0
 var _last_jump_press_msec := -1
 var _jump_released := true
@@ -142,8 +142,8 @@ func _physics_process(delta: float) -> void:
 		var acceleration := FLIGHT_BRAKING if direction.is_zero_approx() else FLIGHT_ACCELERATION
 		velocity = velocity.move_toward(target_velocity, acceleration * delta)
 	else:
-		velocity.x = move_toward(velocity.x, direction.x * speed, delta * 35)
-		velocity.z = move_toward(velocity.z, direction.z * speed, delta * 35)
+		velocity.x = move_toward(velocity.x, direction.x * speed, delta * 70)
+		velocity.z = move_toward(velocity.z, direction.z * speed, delta * 70)
 		if not is_on_floor():
 			velocity.y -= gravity * delta
 		elif Input.is_action_just_pressed("jump"):

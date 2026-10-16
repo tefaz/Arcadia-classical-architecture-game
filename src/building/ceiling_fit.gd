@@ -46,7 +46,7 @@ static func cut_for(frame: Transform3D, gable_kind: String, gable_frame: Transfo
 	return cut
 
 static func rectangles(frame: Transform3D, pieces: Array, ignore_uid: int = 0, refit: bool = false) -> Array[Rect2]:
-	var result: Array[Rect2] = [Rect2(-2,-2,4,4)]
+	var result: Array[Rect2] = [preload("res://src/building/wall_cover.gd").rectangle("flat_roof",frame,pieces)]
 	for peer in pieces:
 		if peer.uid == ignore_uid and ignore_uid != 0: continue
 		var cut := cut_for(frame,peer.kind,peer.transform,pieces,null if refit else peer.pediment_fit)
@@ -80,9 +80,9 @@ static func recipe(rects: Array[Rect2], regions: Array[Dictionary] = []) -> Arra
 		var slab := BoxShape3D.new()
 		slab.size = Vector3(rect.size.x,0.2,rect.size.y)
 		parts.append({"shape":slab,"transform":Transform3D(Basis.IDENTITY,Vector3(centre.x,0.1,centre.y))})
-		for x in [-1,1]:
-			for z in [-1,1]:
-				var tile := rect.intersection(Rect2(Vector2(x-0.992,z-0.992),Vector2(1.984,1.984)))
+		for x in range(floori((rect.position.x+2)/2),ceili((rect.end.x+2)/2)):
+			for z in range(floori((rect.position.y+2)/2),ceili((rect.end.y+2)/2)):
+				var tile := rect.intersection(Rect2(Vector2(x*2-1.992,z*2-1.992),Vector2.ONE*1.984))
 				if tile.size.x <= EPS or tile.size.y <= EPS: continue
 				ClassicalGeometry.box(parts,Vector3(tile.size.x,0.02,tile.size.y),Vector3(tile.get_center().x,0.19,tile.get_center().y),false)
 	parts = preload("res://src/building/ceiling_roof_fit.gd").clip(parts,regions)

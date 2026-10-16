@@ -4,8 +4,10 @@ extends Node3D
 const PedimentFit := preload("res://src/building/pediment_fit.gd")
 const CeilingRoofFit := preload("res://src/building/ceiling_roof_fit.gd")
 const CeilingFit := preload("res://src/building/ceiling_fit.gd")
+const WallCover := preload("res://src/building/wall_cover.gd")
 
 signal changed
+signal geometry_changed
 signal message(text: String)
 signal sound_requested(kind: String)
 
@@ -292,6 +294,9 @@ func update_preview() -> void:
 	var fitting := PedimentFit.transform_for(selected_kind(),ghost.transform,pieces,connection_index)
 	var fitting_changed := not ghost.pediment_fit.is_equal_approx(fitting)
 	ghost.pediment_fit = fitting
+	var cover_rect := WallCover.rectangle(selected_kind(),ghost.transform,pieces)
+	var cover_changed := not ghost.cover_rect.is_equal_approx(cover_rect)
+	ghost.cover_rect = cover_rect
 	var ceiling_changed := false
 	if selected_kind() == "flat_roof":
 		var rects := CeilingFit.rectangles(ghost.transform,pieces)
@@ -301,7 +306,7 @@ func update_preview() -> void:
 		ghost.ceiling_regions = planes
 	var joints := CornerJoints.describe(selected_kind(),ghost.transform,connection_index,0,solution.length)
 	var rise: float = solution.get("rise",BuildCatalogue.STAIR_RISE)
-	if fitting_changed or ceiling_changed or ghost.join_left != int(joints.left) or ghost.join_right != int(joints.right) or not is_equal_approx(ghost.span_length,solution.length) or not is_equal_approx(ghost.stair_rise,rise):
+	if fitting_changed or ceiling_changed or cover_changed or ghost.join_left != int(joints.left) or ghost.join_right != int(joints.right) or not is_equal_approx(ghost.span_length,solution.length) or not is_equal_approx(ghost.stair_rise,rise):
 		ghost.span_length = solution.length
 		ghost.stair_rise = rise
 		ClassicalGeometry.configure(ghost,int(joints.left),int(joints.right),true)
@@ -368,6 +373,8 @@ func placement_error(kind: String, transform_value: Transform3D, excluded: Array
 			if peer.kind == "flat_roof" and CeilingRoofFit.plane_for(peer.transform,kind,transform_value) != null:
 				if peer.get_rid() not in ignored: ignored.append(peer.get_rid())
 	var recipe := ClassicalGeometry.get_recipe(kind,int(joints.left),int(joints.right),length,stair_rise)
+	if kind in BuildCatalogue.FOUNDATION_KINDS:
+		recipe = WallCover.foundation_recipe(kind,WallCover.rectangle(kind,transform_value,fitting_peers))
 	if kind == "flat_roof":
 		recipe = CeilingFit.recipe(CeilingFit.rectangles(transform_value,fitting_peers,ignore_uid,not planned_pieces.is_empty()),CeilingRoofFit.regions_for(transform_value,fitting_peers,ignore_uid,planned_connections))
 	recipe = PedimentFit.recipe(kind,transform_value,fitting_peers,recipe,connection_index if planned_connections.is_empty() else planned_connections)
@@ -467,6 +474,12 @@ func remove_uid(uid: int, update_connections: bool = true) -> void:
 func refresh_connections() -> void:
 	connection_index = CornerJoints.index_pieces(pieces)
 	for piece in pieces:
+		if piece.kind not in WallCover.KINDS: continue
+		var rect := WallCover.rectangle(piece.kind,piece.transform,pieces)
+		if not piece.cover_rect.is_equal_approx(rect):
+			piece.cover_rect = rect
+			if piece.kind != "flat_roof": ClassicalGeometry.configure(piece,0,0)
+	for piece in pieces:
 		if piece.kind in BuildCatalogue.PEDIMENT_KINDS or piece.kind == "finial":
 			var fitting := PedimentFit.transform_for(piece.kind,piece.transform,pieces,connection_index)
 			if not piece.pediment_fit.is_equal_approx(fitting):
@@ -489,6 +502,8 @@ func refresh_connections() -> void:
 				piece.ceiling_rects = rects
 				piece.ceiling_regions = planes
 				ClassicalGeometry.configure(piece,0,0)
+
+	geometry_changed.emit()
 
 func record_action(action: Dictionary) -> void:
 	history.append(action)
@@ -680,6 +695,9 @@ func update_stack(force: bool = false) -> void:
 		var fitting := PedimentFit.transform_for(copy.kind,copy.transform,all_pieces,connections)
 		var fitting_changed := not copy.pediment_fit.is_equal_approx(fitting)
 		copy.pediment_fit = fitting
+		var cover_rect := WallCover.rectangle(copy.kind,copy.transform,all_pieces)
+		var cover_changed := not copy.cover_rect.is_equal_approx(cover_rect)
+		copy.cover_rect = cover_rect
 		var ceiling_changed := false
 		if copy.kind == "flat_roof":
 			var rects := CeilingFit.rectangles(copy.transform,all_pieces,copy.uid,true)
@@ -687,7 +705,7 @@ func update_stack(force: bool = false) -> void:
 			ceiling_changed = copy.ceiling_rects != rects or copy.ceiling_regions != planes
 			copy.ceiling_rects = rects
 			copy.ceiling_regions = planes
-		if fitting_changed or ceiling_changed or copy.join_left != int(joints.left) or copy.join_right != int(joints.right):
+		if fitting_changed or ceiling_changed or cover_changed or copy.join_left != int(joints.left) or copy.join_right != int(joints.right):
 			ClassicalGeometry.configure(copy,int(joints.left),int(joints.right),true)
 		var error := placement_error(copy.kind,copy.transform,[],connections,copy.uid,copy.span_length,copy.stair_rise,all_pieces)
 		if stack_status.is_empty() and not error.is_empty(): stack_status = error

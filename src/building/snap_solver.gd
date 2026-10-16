@@ -5,6 +5,7 @@ extends RefCounted
 const SNAP_RADIUS := 1.7
 const WallPerimeter := preload("res://src/building/wall_perimeter.gd")
 const ColumnLayout := preload("res://src/building/column_layout.gd")
+const WallCover := preload("res://src/building/wall_cover.gd")
 
 static func solve(kind: String, angle: float, hit: Dictionary, pieces: Array, grid: bool, sockets_enabled: bool, elevation: float, anchor: int = 0, connections: Dictionary = {}, length: float = 0) -> Dictionary:
 	return candidates(kind,angle,hit,pieces,grid,sockets_enabled,elevation,anchor,connections,length)[0]
@@ -17,6 +18,9 @@ static func candidates(kind: String, angle: float, hit: Dictionary, pieces: Arra
 	var pos := point
 	var support := (basis.x.abs()*size.x + basis.z.abs()*size.z)/2
 	var surface: BuildPiece = hit.collider as BuildPiece
+	if sockets_enabled and grid and is_zero_approx(elevation):
+		var cover := WallCover.candidates(kind,basis,hit,pieces,anchor)
+		if not cover.is_empty(): return cover
 	if kind == "flat_roof" and surface != null and sockets_enabled and grid and is_zero_approx(elevation):
 		var infill := ceiling_infill(basis,hit,pieces)
 		if not infill.is_empty(): return infill

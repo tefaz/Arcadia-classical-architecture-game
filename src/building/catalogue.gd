@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Stable IDs are the save format contract. Units are metres; pivots sit on the bottom.
 const MATERIALS := ["Warm limestone", "White marble", "Golden sandstone"]
-const MATERIAL_COLORS := [Color("ded3bb"), Color("eeeae1"), Color("cda778")]
+const MATERIAL_COLORS := [Color("cbb797"), Color("eeeae1"), Color("cda778")]
 const BUILD_SLOTS := 9
 const DEFAULT_SLOT := 8
 const TOOL_SLOT := 9
@@ -17,8 +17,9 @@ const STAIR_TREAD := 0.5
 const MIN_SPAN := 0.5
 const MAX_SPAN := 8.0
 const WINDOW_KINDS := ["wall_window_pediment","wall_window_segmental","wall_window_ellipse"]
-const WALL_KINDS := ["wall"]+WINDOW_KINDS
-const MITRE_KINDS := WINDOW_KINDS+ ["wall", "entablature", "cornice", "balustrade"]
+const DOOR_KINDS := ["wall_door_pediment"]
+const WALL_KINDS := ["wall"]+WINDOW_KINDS+DOOR_KINDS
+const MITRE_KINDS := WALL_KINDS+["entablature", "cornice", "balustrade"]
 const FOUNDATION_KINDS := ["foundation","foundation_long","foundation_large","foundation_raised","foundation_podium","step_support"]
 const PEDIMENT_KINDS := ["pediment_left","pediment_right","pediment_crown","pediment_backing","pediment_base"]
 const TERRACOTTA_ROOF_KINDS := ["roof_left","roof_right","roof_left_half","roof_right_half"]
@@ -48,6 +49,7 @@ const PIECES := [
 	{"id": "pediment_backing", "name": "Tympanum backing", "group": "Pediments", "size": Vector3(4, 2.4, 0.7), "description": "A recessed four-metre backing course. Stack beneath the slopes and crown to fill a large pediment. Aim at its front to attach statues or horse reliefs inside the recess.", "cost": {"stone": 6}},
 	{"id": "pediment_base", "name": "Pediment base cornice", "group": "Pediments", "size": Vector3(4, 0.18, 0.7), "description": "A repeatable horizontal cornice along the foot of a modular pediment. Lay a continuous run, then add backing blocks and slopes on top.", "cost": {"stone": 3}},
 	{"id": "wall", "name": "Ashlar wall", "group": "Structure", "size": Vector3(4, 4.1, 0.4), "description": "Coursed masonry with a moulded foot and coping. Fits closing gaps and mitres at right angles. Use , and . for half-metre lengths; / restores automatic fitting.", "cost": {"stone": 10}},
+	{"id": "wall_door_pediment", "name": "Pediment doorway wall", "group": "Structure", "size": Vector3(4, 4.1, 0.72), "description": "A walk-through rectangular doorway framed by moulded stone jambs, a lintel and a triangular pediment on both faces. The standard bay has a 1.8 m wide, 2.7 m high opening with no raised threshold. Fits plain/window wall corners, foundation perimeters and flush ceilings. M changes stone; comma/period adjust the wall span.", "cost": {"stone": 12}},
 	{"id": "wall_window_pediment", "name": "Pediment window wall", "group": "Structure", "size": Vector3(4, 4.1, 0.72), "description": "An ashlar wall with an open rectangular window, moulded sill and a triangular classical pediment on both faces. Matches ordinary wall bays and corner mitres. M selects the stone finish; comma/period change the bay length.", "cost": {"stone": 12}},
 	{"id": "wall_window_segmental", "name": "Curved pediment window", "group": "Structure", "size": Vector3(4, 4.1, 0.72), "description": "The same rectangular opening, jambs and sill as the pediment window wall, crowned by a classical segmental pediment with a recessed centre and layered cornice instead of a triangle. Decorated on both faces; matches ordinary wall bays and corner mitres. M changes the stone finish.", "cost": {"stone": 12}},
 	{"id": "wall_window_ellipse", "name": "Elliptical window wall", "group": "Structure", "size": Vector3(4, 4.1, 0.72), "description": "An ashlar wall with a tall open window topped by a half-ellipse arch and moulded stone surround on both faces. Fits ordinary walls and entablatures; the opening remains clear for views and light. M selects the stone finish.", "cost": {"stone": 12}},
@@ -56,7 +58,7 @@ const PIECES := [
 	{"id": "roof_left_half", "name": "Terracotta Roof Half Slope", "group": "Roofs", "size": Vector3(2, 1.2, 4), "description": "A smaller terracotta slope rising 1.2 m across 2 m. Rotate 180 degrees for the opposite side of a compact roof or pediment crown. Joins the larger slopes.", "cost": {"stone": 1, "clay": 4}},
 	{"id": "stone_roof_left", "name": "Stone Roof Slope", "group": "Roofs", "size": Vector3(4, 2.4, 4), "description": "A hollow stone-slab slope rising 2.4 m across 4 m. R rotates it for either side. Uses the selected limestone, marble or sandstone and fits the same pediments as terracotta.", "cost": {"stone": 10}},
 	{"id": "stone_roof_left_half", "name": "Stone Roof Half Slope", "group": "Roofs", "size": Vector3(2, 1.2, 4), "description": "A smaller stone slope rising 1.2 m across 2 m for compact roofs and pediment crowns. Rotate 180 degrees for the opposite side. M changes its stone finish.", "cost": {"stone": 5}},
-	{"id": "flat_roof", "name": "Flat roof / ceiling", "group": "Roofs", "size": Vector3(4, 0.2, 4), "description": "A thin 4 × 4 m stone cover with a flat underside and broad slab joints above. Starts with an edge anchor so it extends inward from a wall or entablature. T cycles four edges, four corners and the centre; R turns the slab. Repeat sideways for larger ceilings; edges fit automatically against pediments and beneath roof slopes, keeping the underside flat. M selects limestone, marble or sandstone.", "cost": {"stone": 8}},
+	{"id": "flat_roof", "name": "Flat roof / ceiling", "group": "Roofs", "size": Vector3(4, 0.2, 4), "description": "A thin stone cover with a flat underside. Aim at the upper wall of a closed rectangular room to fit flush with its outer faces. Repeat sideways or use Stack; final panels fit the far walls. On entablatures it starts with an edge anchor. T selects manual edge, corner and centre anchors; R turns the slab. Also fits pediments and roof slopes. M selects the stone finish.", "cost": {"stone": 8}},
 	{"id": "dome", "name": "Dome roof", "group": "Roofs", "size": Vector3(4, 2.4, 4), "description": "A hollow stone dome on a short drum and a 4 × 4 m square coping base. Covers a standard room without filling the interior. On a wall or beam, R turns the attached edge and T cycles edge/corner anchors. M selects limestone, marble or sandstone.", "cost": {"stone": 18}},
 	{"id": "dome_large", "name": "Grand dome roof", "group": "Roofs", "size": Vector3(8, 4.4, 8), "description": "An 8 × 8 m hollow dome for larger halls, with a square corner-covering base and a round stone drum. Uses the chosen stone finish; R turns the attached edge and T cycles anchors on walls or beams.", "cost": {"stone": 60}},
 	{"id": "cornice", "name": "Dentil cornice", "group": "Details", "size": Vector3(4, 0.3, 0.8), "description": "A slender dentil course with automatic corner mitres and gap fitting. Use , and . to adjust its length; / restores automatic fitting.", "cost": {"stone": 4}},

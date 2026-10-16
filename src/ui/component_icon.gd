@@ -80,6 +80,13 @@ func _draw() -> void:
 			if kind == "roof":
 				for i in range(4):
 					draw_line(Vector2(16+i*5,33-i*4),Vector2(42+i*4,46-i*4),light,1)
+		"wall_door_pediment":
+			draw_rect(Rect2(7,7,50,51),shade)
+			for y in [17,28,39,50]: draw_line(Vector2(8,y),Vector2(56,y),light,0.7)
+			draw_rect(Rect2(22,27,20,32),Color("18332f"))
+			for x in [20,44]: draw_line(Vector2(x,27),Vector2(x,58),light,2.5)
+			draw_line(Vector2(18,26),Vector2(46,26),light,3)
+			draw_polyline(PackedVector2Array([Vector2(16,22),Vector2(32,11),Vector2(48,22),Vector2(16,22)]),light,2)
 		"wall_window_pediment", "wall_window_segmental", "wall_window_ellipse":
 			draw_rect(Rect2(7,7,50,51),shade)
 			for y in [16,27,38,49]: draw_line(Vector2(8,y),Vector2(56,y),light,0.7)

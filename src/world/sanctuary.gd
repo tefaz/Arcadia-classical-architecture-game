@@ -4,6 +4,11 @@ extends Node3D
 const DAY_LENGTH_SECONDS := 1200.0
 const DEFAULT_DAY_PROGRESS := 0.2
 const DAYLIGHT_UPDATE_INTERVAL := 0.1
+const Lighting = preload("res://src/world/lighting.gd")
+const Trees = preload("res://src/world/trees.gd")
+const Grass = preload("res://src/world/grass.gd")
+const TERRAIN_STEP := 2.0
+const TERRAIN_CELLS := 128
 
 var sun: DirectionalLight3D
 var sky_fill: DirectionalLight3D
@@ -13,13 +18,16 @@ var _daylight_update_elapsed := 0.0
 var terrain: MeshInstance3D
 var environment: Environment
 var stone: StandardMaterial3D
-var bark: StandardMaterial3D
-var leaves: StandardMaterial3D
+var terrain_noise: FastNoiseLite
+var grass: Grass
 
 func _ready() -> void:
 	_create_light()
 	_create_landscape()
 	_create_garden()
+	grass = Grass.new()
+	add_child(grass)
+	grass.populate(ground_height_at)
 
 static func material(color: Color, roughness: float = 1.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -65,6 +73,8 @@ func _create_light() -> void:
 	sky_fill.light_energy = 0.16
 	sky_fill.shadow_enabled = false
 	add_child(sky_fill)
+	Lighting.setup(environment,sun,sky_fill)
+	if Lighting.is_forward_plus(): sky_material.set_shader_parameter("background_energy",0.7)
 	_update_daylight()
 
 func advance_daylight(delta: float) -> void:
@@ -92,16 +102,19 @@ func _update_daylight() -> void:
 	var direction := Vector3(cos(angle),sin(angle)*sin(PI/3),sin(angle)*cos(PI/3))
 	sun.basis = Basis.looking_at(-direction,Vector3.UP)
 	var warmth := 1.0-smoothstep(0.08,0.55,direction.y)
-	sun.light_color = Color("fff0ce").lerp(Color("ffc078"),warmth)
+	sun.light_color = Color("ffe4ba").lerp(Color("f4a369"),warmth)
 	sun.light_energy = lerpf(0.22,0.35,smoothstep(0,0.5,direction.y))
+	# Forward+ uses linear HDR lighting; Compatibility needs its own lower energy.
+	if Lighting.is_forward_plus(): sun.light_energy *= Lighting.DIRECT_ENERGY_SCALE
+	else: sun.light_energy *= 0.8
 	var fill_direction := Vector3(-direction.x,0.9,-direction.z).normalized()
 	sky_fill.basis = Basis.looking_at(-fill_direction,Vector3.UP)
-	environment.ambient_light_color = Color("d0dbe1").lerp(Color("e0cfba"),warmth*0.3)
-	environment.fog_light_color = Color("bdc9c5").lerp(Color("d5b8a0"),warmth*0.6)
+	environment.ambient_light_color = Color("a7b7c9").lerp(Color("cab194"),warmth*0.3)
+	environment.fog_light_color = Color("a8b7c0").lerp(Color("c59e85"),warmth*0.6)
 	sky_material.set_shader_parameter("sun_direction",sun.global_basis.z)
 	sky_material.set_shader_parameter("sun_color",Color("fff8de").lerp(Color("ffc16f"),warmth))
-	sky_material.set_shader_parameter("zenith_color",Color("7493aa").lerp(Color("7c929f"),warmth*0.55))
-	sky_material.set_shader_parameter("horizon_color",Color("d7d9c7").lerp(Color("e9b48f"),warmth))
+	sky_material.set_shader_parameter("zenith_color",Color("567b9a").lerp(Color("657584"),warmth*0.55))
+	sky_material.set_shader_parameter("horizon_color",Color("b8c4c9").lerp(Color("d8a27e"),warmth))
 
 func set_shade_brightness(value: float) -> void:
 	environment.ambient_light_energy = clampf(value,0.35,0.85)
@@ -133,20 +146,24 @@ func _create_landscape() -> void:
 	var sea := PlaneMesh.new()
 	sea.size = Vector2(900, 900)
 	mesh_node(sea, material(Color("758f91"), 0.5), Vector3(0, -2, 0))
-	var noise := FastNoiseLite.new()
-	noise.seed = 618
-	noise.frequency = 0.022
+	terrain_noise = FastNoiseLite.new()
+	terrain_noise.seed = 618
+	terrain_noise.frequency = 0.022
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for x in range(-32, 32):
-		for z in range(-32, 32):
-			for offset in [Vector2(0,0), Vector2(1,1), Vector2(0,1), Vector2(0,0), Vector2(1,0), Vector2(1,1)]:
-				var px: float = (x + offset.x) * 4.0
-				var pz: float = (z + offset.y) * 4.0
-				var edge := smoothstep(42, 80, maxf(absf(px), absf(pz)))
-				var height := maxf(0, noise.get_noise_2d(px, pz) + 0.4) * 17 * edge
-				surface.add_vertex(Vector3(px, height - 0.08, pz))
-	surface.generate_normals()
+	# Shared, smoothly shaded vertices replace the coarse, faceted four-metre grid.
+	for x in range(TERRAIN_CELLS+1):
+		for z in range(TERRAIN_CELLS+1):
+			var px := (x-TERRAIN_CELLS/2)*TERRAIN_STEP
+			var pz := (z-TERRAIN_CELLS/2)*TERRAIN_STEP
+			var normal := Vector3(_terrain_vertex_height(px-0.5,pz)-_terrain_vertex_height(px+0.5,pz),1.0,_terrain_vertex_height(px,pz-0.5)-_terrain_vertex_height(px,pz+0.5)).normalized()
+			surface.set_normal(normal)
+			surface.add_vertex(Vector3(px,_terrain_vertex_height(px,pz),pz))
+	for x in range(TERRAIN_CELLS):
+		for z in range(TERRAIN_CELLS):
+			var first := x*(TERRAIN_CELLS+1)+z
+			for offset in [0,TERRAIN_CELLS+2,1,0,TERRAIN_CELLS+1,TERRAIN_CELLS+2]:
+				surface.add_index(first+offset)
 	terrain = mesh_node(surface.commit(), ground_shader, Vector3.ZERO)
 	var mountain := SphereMesh.new()
 	mountain.radial_segments = 16
@@ -159,18 +176,9 @@ func _create_landscape() -> void:
 
 func _create_garden() -> void:
 	stone = material(Color("aea88d"))
-	bark = material(Color("625444"))
-	leaves = material(Color("374e35"))
+	Trees.populate(self,terrain_height_at)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 159
-	for i in range(50):
-		var angle := rng.randf() * TAU
-		var radius := rng.randf_range(33, 65)
-		var pos := Vector3(cos(angle)*radius, 0, sin(angle)*radius)
-		_tree(pos, rng.randf_range(0.8, 1.5), i % 3 != 0)
-	for x in [-26.0, 1.0]:
-		for z in [6.0, 13.0, 20.0]:
-			_tree(Vector3(x, 0, z), 0.8, true)
 	# Discreet corner markers leave the entire construction plot usable.
 	for x in [-1.0, 25.0]:
 		for z in [-14.0, 14.0]:
@@ -181,30 +189,32 @@ func _create_garden() -> void:
 	rock_mesh.radial_segments = 12
 	rock_mesh.rings = 6
 	for i in range(28):
-		var a := rng.randf() * TAU
-		var r := rng.randf_range(40, 73)
-		mesh_node(rock_mesh, stone, Vector3(cos(a)*r, 0.05, sin(a)*r), Vector3(rng.randf_range(1,3), rng.randf_range(0.5,1.5), rng.randf_range(1,2)))
+		var along := rng.randf_range(-94,94)
+		var outward := rng.randf_range(74,96)
+		var pos := Vector3(along,0,outward) if i%2 == 0 else Vector3(outward,0,along)
+		if i%4 >= 2: pos *= -1
+		pos.y = terrain_height_at(Vector2(pos.x,pos.z))+0.05
+		mesh_node(rock_mesh, stone, pos, Vector3(rng.randf_range(1,3), rng.randf_range(0.5,1.5), rng.randf_range(1,2)))
 
-func _tree(pos: Vector3, factor: float, cypress: bool) -> void:
-	var trunk := CylinderMesh.new()
-	trunk.bottom_radius = 0.19
-	trunk.top_radius = 0.1
-	trunk.height = 3 * factor
-	mesh_node(trunk, bark, pos + Vector3.UP * 1.5 * factor)
-	if cypress:
-		for j in range(3):
-			var cone := CylinderMesh.new()
-			cone.bottom_radius = (1.1 - j*0.22)*factor
-			cone.top_radius = 0.12 * factor
-			cone.height = (4.2 - j*0.4)*factor
-			cone.radial_segments = 12
-			mesh_node(cone, leaves, pos + Vector3.UP * (3.4 + j*1.0) * factor)
-	else:
-		for j in range(3):
-			var crown := SphereMesh.new()
-			crown.radial_segments = 12
-			crown.rings = 6
-			mesh_node(crown, leaves, pos + Vector3((j-1)*factor, (3.2+j*0.3)*factor, 0), Vector3(2.9, 2.0, 2.4)*factor)
+func _terrain_vertex_height(x: float, z: float) -> float:
+	# Keep all walkable/buildable ground level; hills rise beyond the player bounds.
+	var edge := smoothstep(64,94,maxf(absf(x),absf(z)))
+	return maxf(0,terrain_noise.get_noise_2d(x,z)+0.4)*17*edge-0.08
+
+func terrain_height_at(pos: Vector2) -> float:
+	# Match the actual rendered terrain triangles, rather than a smooth noise
+	# sample that could leave a tree floating above/below the rendered hillside.
+	var cell := (pos/TERRAIN_STEP).floor()*TERRAIN_STEP
+	var f := (pos-cell)/TERRAIN_STEP
+	var a := _terrain_vertex_height(cell.x,cell.y)
+	var b := _terrain_vertex_height(cell.x+TERRAIN_STEP,cell.y)
+	var c := _terrain_vertex_height(cell.x,cell.y+TERRAIN_STEP)
+	var d := _terrain_vertex_height(cell.x+TERRAIN_STEP,cell.y+TERRAIN_STEP)
+	return a+(d-c)*f.x+(c-a)*f.y if f.y >= f.x else a+(b-a)*f.x+(d-b)*f.y
+
+func ground_height_at(pos: Vector2) -> float:
+	var height := terrain_height_at(pos)
+	return maxf(0,height) if maxf(absf(pos.x),absf(pos.y)) <= 80 else height
 
 static func sample_pavilion() -> Array:
 	var pieces: Array = []
@@ -245,6 +255,31 @@ static func corner_example(include_railing: bool = false) -> Array:
 			for offset in [-2.0,2.0]:
 				append.call(layer[0],Vector3(12+offset,layer[1],sign_value*4),0,layer[2])
 				append.call(layer[0],Vector3(12+sign_value*4,layer[1],offset),PI/2,layer[2])
+	return result
+
+static func wall_cover_example(foundation_cover: bool = false) -> Array:
+	var result: Array = []
+	var append := func(kind: String, pos: Vector3, angle: float = 0.0, length: float = 4.0):
+		var record := {"uid":result.size()+1,"kind":kind,"stone":0,"position":[pos.x,pos.y,pos.z],"rotation":angle}
+		if kind in BuildCatalogue.MITRE_KINDS and not is_equal_approx(length,4): record.length = length
+		result.append(record)
+	for x in [-2.0,2.0]:
+		for z in [-2.0,2.0]:
+			append.call("foundation",Vector3(12+x,0,z))
+			append.call("foundation" if foundation_cover else "flat_roof",Vector3(12+x,4.5,z))
+	for side in [-1,1]:
+		for along in [-1.89,1.89]:
+			append.call("wall_door_pediment" if side == 1 and along > 0 else "wall_window_segmental",Vector3(12+along,0.4,side*3.78),0,3.78)
+			append.call("wall",Vector3(12+side*3.78,0.4,along),PI/2,3.78)
+	result.append({"uid":result.size()+1,"kind":"steps","stone":0,"position":[13.89,0,4.5],"rotation":0.0,"rise":0.4})
+	return result
+
+static func doorway_example() -> Array:
+	var result: Array = []
+	for finish in range(3):
+		var x := 6.0+finish*6
+		result.append({"uid":result.size()+1,"kind":"foundation","stone":finish,"position":[x,0,0],"rotation":0.0})
+		result.append({"uid":result.size()+1,"kind":"wall_door_pediment","stone":finish,"position":[x,0.4,0],"rotation":0.0})
 	return result
 
 static func foundation_example() -> Array:

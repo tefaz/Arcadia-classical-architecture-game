@@ -7,7 +7,8 @@ const GUIDE_RADIUS := 12.0
 
 static func rect_of(piece: BuildPiece, frame: Transform3D) -> Rect2:
 	var size := BuildCatalogue.piece_size(piece.kind)
-	var bounds := (frame.affine_inverse()*piece.transform)*AABB(Vector3(-size.x/2,0,-size.z/2),size)
+	var rect := piece.cover_rect
+	var bounds := (frame.affine_inverse()*piece.transform)*AABB(Vector3(rect.position.x,0,rect.position.y),Vector3(rect.size.x,size.y,rect.size.y))
 	return Rect2(Vector2(bounds.position.x,bounds.position.z),Vector2(bounds.size.x,bounds.size.z))
 
 static func on_platform(point: Vector3, rectangles: Array[Rect2], frame: Transform3D) -> bool:

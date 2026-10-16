@@ -22,7 +22,7 @@ static func masonry(parts: Array, size: Vector3, bottom: float, rows: int, block
 
 static func paving(parts: Array, size: Vector3, courtyard: bool) -> void:
 	ClassicalGeometry.box(parts,Vector3(size.x,0.32,size.z),Vector3(0,0.16,0),false)
-	var border := 0.48 if courtyard else 0.26
+	var border := minf(0.48 if courtyard else 0.26,minf(size.x,size.z)*0.22)
 	for side in [-1,1]:
 		ClassicalGeometry.box(parts,Vector3(size.x,0.08,border),Vector3(0,0.36,side*(size.z-border)/2),false)
 		ClassicalGeometry.box(parts,Vector3(border,0.08,size.z-border*2),Vector3(side*(size.x-border)/2,0.36,0),false)
@@ -56,9 +56,9 @@ static func paving(parts: Array, size: Vector3, courtyard: bool) -> void:
 	ClassicalGeometry.box(parts,size,Vector3(0,size.y/2,0))
 	parts.back().erase("mesh")
 
-static func recipe(id: String) -> Array:
+static func recipe(id: String, fitted_size: Vector3 = Vector3.ZERO) -> Array:
 	var parts: Array = []
-	var size: Vector3 = BuildCatalogue.get_piece(id).size
+	var size: Vector3 = BuildCatalogue.get_piece(id).size if fitted_size == Vector3.ZERO else fitted_size
 	match id:
 		"foundation", "foundation_raised", "foundation_podium":
 			# Flush ashlar modules share a 40 cm course. No projecting feet or

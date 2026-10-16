@@ -29,6 +29,7 @@ func _ready() -> void:
 	builder.player = player
 	builder.ledger.game_mode = game_mode
 	add_child(builder)
+	builder.geometry_changed.connect(func(): world.grass.sync_buildings(builder.pieces))
 	builder.restore(SanctuaryWorld.sample_pavilion())
 	sounds = BuilderSounds.new()
 	add_child(sounds)
@@ -36,7 +37,7 @@ func _ready() -> void:
 	ui = ArcadiaInterface.new()
 	ui.builder = builder
 	ui.player = player
-	ui.set_meta("quality",settings.get_value("controls","quality",1))
+	ui.set_meta("quality",clampi(int(settings.get_value("controls","quality",1)),0,2))
 	ui.set_meta("sound",sounds.enabled)
 	ui.set_meta("shade_light",world.environment.ambient_light_energy)
 	add_child(ui)
@@ -241,6 +242,7 @@ func empty_world() -> void:
 	ui.hud.toast("An empty sanctuary · press E to arrange your building hotbar")
 
 func _change_setting(key: String, value: Variant) -> void:
+	ui.set_meta(key,value)
 	settings.set_value("controls",key,value)
 	settings.save("user://settings.cfg")
 	if key == "quality":
@@ -251,9 +253,8 @@ func _change_setting(key: String, value: Variant) -> void:
 		world.set_shade_brightness(float(value))
 
 func _apply_quality(quality: int) -> void:
-	world.sun.shadow_enabled = quality != 0
-	get_viewport().msaa_3d = Viewport.MSAA_DISABLED if quality == 0 else (Viewport.MSAA_2X if quality == 1 else Viewport.MSAA_4X)
-	RenderingServer.directional_shadow_atlas_set_size(4096 if quality == 2 else 2048,false)
+	world.Lighting.apply_quality(world,get_viewport(),quality)
+	world.grass.set_quality(quality)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and ui:
@@ -262,6 +263,9 @@ func _notification(what: int) -> void:
 
 func _capture() -> void:
 	var args := OS.get_cmdline_user_args()
+	var quality_index := args.find("--quality")
+	if quality_index >= 0 and quality_index+1 < args.size() and args[quality_index+1].is_valid_int():
+		_apply_quality(int(args[quality_index+1]))
 	var day_index := args.find("--day-progress")
 	if day_index >= 0 and day_index+1 < args.size() and args[day_index+1].is_valid_float():
 		world.restore_daylight(float(args[day_index+1]))
@@ -273,6 +277,9 @@ func _capture() -> void:
 		elif "--roofs" in args:
 			ui.active_filter = "Roofs"
 			ui._select_detail("flat_roof" if "--flat-roofs" in args else ("dome_large" if "--domes" in args else ("stone_roof_left" if "--stone-roofs" in args else "roof_left")))
+		elif "--doorway" in args:
+			ui.active_filter = "Structure"
+			ui._select_detail("wall_door_pediment")
 		elif "--windows" in args or "--curved-windows" in args:
 			ui.active_filter = "Structure"
 			ui._select_detail("wall_window_segmental" if "--curved-windows" in args else "wall_window_pediment")
@@ -298,6 +305,32 @@ func _capture() -> void:
 		ui.hud.hide()
 		player.position = Vector3(-6,7,5)
 		player.look_at_point(Vector3(-16,3,-7))
+	elif "--trees" in args:
+		ui.menu.hide()
+		ui.hud.hide()
+		player.position = Vector3(55,12,23)
+		player.camera.fov = 62
+		player.look_at_point(Vector3(86,11,17))
+	elif "--landscape" in args:
+		ui.menu.hide()
+		ui.hud.hide()
+		player.position = Vector3(-4,1.05,13)
+		player.camera.fov = 65
+		player.look_at_point(Vector3(-20,2.1,-7))
+	elif "--doorway" in args:
+		builder.restore(SanctuaryWorld.doorway_example())
+		ui.menu.hide()
+		ui.hud.hide()
+		player.position = Vector3(16,5.3,14)
+		player.camera.fov = 60
+		player.look_at_point(Vector3(12,2.5,0))
+	elif "--wall-cover" in args:
+		builder.restore(SanctuaryWorld.wall_cover_example("--foundation-cover" in args))
+		ui.menu.hide()
+		ui.hud.hide()
+		player.position = Vector3(23,10,13)
+		player.camera.fov = 57
+		player.look_at_point(Vector3(12,2.8,0))
 	elif "--corners" in args:
 		builder.restore(SanctuaryWorld.corner_example("--railing" in args))
 		ui.menu.hide()

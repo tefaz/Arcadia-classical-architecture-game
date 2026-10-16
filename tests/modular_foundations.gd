@@ -99,7 +99,10 @@ static func run(tree: SceneTree, game: Node3D, check: Callable) -> void:
 	player.velocity = Vector3.ZERO
 	for i in range(12): await tree.physics_frame
 	Input.action_press("forward")
-	for i in range(100): await tree.physics_frame
+	for i in range(100):
+		await tree.physics_frame
+		# Stop on the landing at either movement speed instead of walking off its back.
+		if player.position.z < 0.75: break
 	Input.action_release("forward")
 	await Tools.settle(tree)
 	check.call(player.position.z < 2 and player.position.z > -2 and player.position.y > 1.95 and player.is_on_floor(),"The player walks from the ground up fitted podium stairs onto the platform without jumping")

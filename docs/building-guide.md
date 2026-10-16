@@ -4,7 +4,7 @@ Detailed placement tips for Arcadia’s modular architecture. For installation, 
 
 ## What you can build
 
-The catalogue contains 39 components: purpose-built foundations and paving, stair supports, temple steps, complete Doric / Ionic / Corinthian columns, entablatures, modular pediments, ashlar walls, round arches, terracotta and stone roofs, hollow domes, dentil cornices, balustrades, pedestals, garden urns, palmette finials, and human, horse and lion sculpture. Choose warm limestone, white marble, or golden sandstone. Terracotta roofs retain their tiles; stone roofs and domes use the selected stone finish.
+The catalogue contains 40 components: purpose-built foundations and paving, stair supports, temple steps, complete Doric / Ionic / Corinthian columns, entablatures, modular pediments, ashlar walls, round arches, terracotta and stone roofs, hollow domes, dentil cornices, balustrades, pedestals, garden urns, palmette finials, and human, horse and lion sculpture. Choose warm limestone, white marble, or golden sandstone. Terracotta roofs retain their tiles; stone roofs and domes use the selected stone finish.
 
 Pieces share metre-based dimensions and bottom-centred pivots. A standard column is 4.1 m tall, matching a wall or arch bay. Foundations are 4 × 4 m; beam and roof modules default to 4 m. Walls, entablatures, cornices, and balustrades automatically shorten to close matching gaps and also support lengths from 0.5 to 8 m in 0.5 m steps. The Corinthian order has a taller, 4.3 m column to accommodate its leaf capital.
 
@@ -63,6 +63,12 @@ They share the ordinary wall's **4 m bay and 4.1 m height**, fit foundations and
 
 ![Rectangular windows with triangular and curved pediments](screenshots/curved-window-pediments.png)
 
+## Pediment doorways
+
+**Pediment doorway wall** is in **E → Structure**. It shares the usual 4 m bay and 4.1 m wall height, with a **1.8 m wide × 2.7 m high** rectangular opening, moulded jambs and a triangular pediment on both faces. The opening reaches floor level with no raised threshold or closed door leaf. Use **M** for the stone finish and **R** for rotation. It fits plain/window wall corners, foundation perimeters and flush ceilings. Comma/period adjust the span; the opening narrows on short wall spans. Place stairs separately when the entrance sits on a raised foundation.
+
+![Pediment doorway walls in limestone, marble and sandstone at noon](screenshots/pediment-doorway.png)
+
 ## Modular roofs and domes
 
 The **Roofs** library filter replaces the single-size roof with **Terracotta Roof Slope** and **Stone Roof Slope**, each with a smaller **Half Slope** version. They rise **2.4 m per 4 m bay** and repeat in **4 m depth bays**.
@@ -87,6 +93,10 @@ The **Stone Roof Slope** and **Stone Roof Half Slope** use broad slabs with rece
 **Flat roof / ceiling** is a **4 × 4 m, 0.2 m thick** stone slab with a smooth underside and broad upper slab joints. It starts with a **front-edge anchor**, so its edge rests on the entablature and the cover extends into the room. **R** turns it inward from another side. **T** cycles front/back/right/left edges, four corners, then the centre; the HUD names the current anchor. Corner anchors can attach to beam endpoints. Aim at a slab's side to add the next 4 m tile, or use Stack for larger ceilings. The anchors also work on ground and with socket snapping disabled. **M** chooses the stone finish.
 
 ![Flat stone covers on four- and eight-metre pavilions](screenshots/flat-roofs.png)
+
+For a **house with walls on all four sides**, keep grid and socket snapping enabled and use the default ceiling anchor. Aim at a wall's top, or its upper section from inside the room: **Flush wall cover** aligns the slab with the **outer wall faces**, including walls inset around a foundation. **Foundation** pieces also work as thicker flat roofs or upper floors. Larger rooms use normal four-metre bays; the last panels fit the far walls, including non-standard room sizes. Aim at an existing panel's side to extend inward, or use Stack. The preview, solid collision and saved building use the same fit. **T** selects manual ceiling anchors; **Alt**, disabled snapping, or a manual height offset retain free placement. Offset slabs placed before this change should be removed and placed again using the new snap.
+
+![A flat ceiling fitted flush to a complete rectangular wall ring](screenshots/wall-cover.png)
 
 **Dome roof** covers a **4 × 4 m** room and rises **2.4 m**; **Grand dome roof** covers **8 × 8 m** and rises **4.4 m**. Both have hollow interiors, a short drum, and square coping that covers room corners. Aim at the top of a matching wall or entablature run to centre the dome over the room. **R** turns its attached edge; **T** cycles centre, edge, and corner anchors for other layouts. On foundations the default anchor is the centre.
 
